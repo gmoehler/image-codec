@@ -1,0 +1,27 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "description": "poi cli",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --projects . --colors --coverage --runInBand"
+  },
+  "author": "gm",
+  "license": "MIT",
+  "dependencies": {
+    "csv-parse": "2.4.0",
+    "eslint": "4.19.1",
+    "inquirer": "5.2.0",
+    "net": "1.0.2",
+    "pngjs": "3.3.3",
+    "serialport": "6.2.0"
+  },
+  "devDependencies": {
+    "jest": "22.4.3"
+  },
+  "jest": {
+    "verbose": true,
+    "clearMocks": true
+  }
+}
