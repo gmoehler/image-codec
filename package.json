@@ -4,7 +4,7 @@
   "description": "poi cli",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node codecTest.js",
     "test": "jest --projects . --colors --coverage --runInBand"
   },
   "author": "gm",
