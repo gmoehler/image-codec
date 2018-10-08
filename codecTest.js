@@ -24,6 +24,7 @@ async function _readImage(imageFile) {
   
 		let origByteCnt = 0;
 		let byteCnt = 0;
+		let lineCnt = 0;
 		const ww = this.width;
   
         for (let w = 0; w < ww; w++) {
@@ -32,6 +33,7 @@ async function _readImage(imageFile) {
           let prev_r = this.data[0];
           let prev_g = this.data[1];
           let prev_b = this.data[2];
+          lineCnt++;
           let sameCnt = 1;
   
           for (let h = 1; h < this.height; h++) {
@@ -63,7 +65,8 @@ async function _readImage(imageFile) {
         console.log(`Faktor: ${Math.round(byteCnt/origByteCnt*100)}%`);
         return resolve({
         	origByteCnt: origByteCnt,
-        	byteCnt: byteCnt
+        	byteCnt: byteCnt,
+        	lineCnt: lineCnt
 		});
       });
     })
@@ -85,8 +88,11 @@ async function _readImage(imageFile) {
 		const sumOrig = c.reduce ((sum, obj) =>
 			sum + obj.origByteCnt, 0)
 		const sum = c.reduce ((sum, obj) =>
-			sum + obj.byteCnt, 0)
+			sum + obj.byteCnt, 0);
+		const FrameSum = c.reduce ((sum, obj) =>
+			sum + obj.lineCnt, 0)
 		
+		console.log(`Lines: ${FrameSum}`);
 		console.log(`Original bytes: ${sumOrig}`);
         console.log(`Bytes: ${sum}`);
         console.log(`Faktor: ${Math.round(sum/sumOrig*100)}%`);
