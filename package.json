@@ -12,10 +12,7 @@
   "dependencies": {
     "csv-parse": "2.4.0",
     "eslint": "4.19.1",
-    "inquirer": "5.2.0",
-    "net": "1.0.2",
-    "pngjs": "3.3.3",
-    "serialport": "6.2.0"
+    "pngjs": "3.3.3"
   },
   "devDependencies": {
     "jest": "22.4.3"
