@@ -25,25 +25,37 @@ async function _readImage(imageFile) {
 		let origByteCnt = 0;
 		let byteCnt = 0;
 		let lineCnt = 0;
+		let prevFrame = [];
 		const ww = this.width;
+		
   
         for (let w = 0; w < ww; w++) {
           // console.log(`frame: ${w}`);
+          
           
           let prev_r = this.data[0];
           let prev_g = this.data[1];
           let prev_b = this.data[2];
           lineCnt++;
+          byteCnt+= 4;
           let sameCnt = 1;
   
           for (let h = 1; h < this.height; h++) {
-            	let idx = (this.width * h + w) << 2;
+            	const idx = (this.width * h + w) << 2;
             	origByteCnt+= 3;
                 //console.log(` ${h}: ${this.data[idx]} ${this.data[idx+1]} ${this.data[idx+2]}`);
             
             const r = this.data[idx];
             const g = this.data[idx+1];
             const b = this.data[idx+2];
+            
+            const pidx = 3 * h;
+            /*
+            if (w>0 && r === prevFrame[pidx] &&
+            	 g === prevFrame[pidx+1] &&
+             	b === prevFrame[pidx+2]) {
+             	
+             }*/
             
             if (r === prev_r && g === prev_g && b === prev_b) {
             	sameCnt++;
@@ -54,10 +66,11 @@ async function _readImage(imageFile) {
             	prev_g = g;
             	prev_b = b;
             	sameCnt = 1;
-            
   	  	}
+  
           }
           byteCnt+= 4;
+
           //console.log(`${sameCnt}x: ${prev_r} ${prev_g} ${prev_b}`);
         }
         console.log(`Original bytes: ${origByteCnt}`);
