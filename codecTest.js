@@ -23,10 +23,10 @@ function rgb_print(rgb) {
   console.log(`${r} ${g} ${b}`);
 }
 
-function runLengthEncode(data, width, height) {
-// 17% comprimation 
-// 22% when final black ignored
-// 24% when initial and trailing black frames ignored
+function analyseImage(data, width, height) {
+  // 17% comprimation 
+  // 22% when final black ignored
+  // 24% when initial and trailing black frames ignored
   let bytes = 0;
 
   // scan for black
@@ -43,6 +43,17 @@ function runLengthEncode(data, width, height) {
   }
   const firstFrame = nonBlackFrames.length ? nonBlackFrames.shift() : 0;
   const lastFrame = nonBlackFrames.length ? nonBlackFrames.pop() : width-1;
+  // const numFrames = lastFrame-firstFrame+1;
+  // console.log({firstFrame, lastFrame, numFrames});
+  return {firstFrame, lastFrame};
+}
+
+function runLengthEncode(data, width, height, firstFrame, lastFrame, ) {
+  // 17% comprimation 
+  // 22% when final black ignored
+  // 24% when initial and trailing black frames ignored
+  let bytes = 0;
+
   const numFrames = lastFrame-firstFrame+1;
   // console.log({firstFrame, lastFrame, numFrames});
 
@@ -69,13 +80,17 @@ function runLengthEncode(data, width, height) {
   return {bytes, frames: numFrames};
 }
 
-function diffEncode(data, width, height) {
+function diffEncode(data, width, height, firstFrame, lastFrame) {
 // 37% comprimation
+// 39% if initial and final black frames ignored
 
   let bytes = 0;
   let prev_frame = [];
 
-  for (let w = 0; w < width; w++) {
+  const numFrames = lastFrame-firstFrame+1;
+  // console.log({firstFrame, lastFrame, numFrames});
+
+  for (let w = firstFrame; w < lastFrame+1; w++) {
     for (let h = 0; h < height; h++) {
 
       const idx = (width * h + w) << 2;
@@ -90,7 +105,7 @@ function diffEncode(data, width, height) {
       prev_frame[h] = this_rgb;
     }
   }
-  return {bytes, frames: width};
+  return {bytes, frames: numFrames};
 }
 
 async function _readImage(imageFile) {
@@ -111,8 +126,12 @@ async function _readImage(imageFile) {
 
     pipe.on('parsed', function () {
       console.log(`${imageFile}: ${this.width} x ${this.height} px`);
+
+      const params = analyseImage(this.data, this.width, this.height);
       
-      const metrics = runLengthEncode(this.data, this.width, this.height);
+      const metrics = runLengthEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+      // const metrics = diffEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+
       const origFrames = this.width;
       const frames = metrics.frames;
       const origBytes = frames * this.height * 3;
