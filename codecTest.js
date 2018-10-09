@@ -11,14 +11,44 @@ function rgb_eq(rgb1, rgb2) {
   return JSON.stringify(rgb1) === JSON.stringify(rgb2);
 }
 
+function black() {
+  return {r: 0, g: 0, b:0};
+}
+
+function rgb_isblack(rgb) {
+  return rgb_eq(rgb, black());
+}
+
+function rgb_print(rgb) {
+  console.log(`${r} ${g} ${b}`);
+}
+
 function runLengthEncode(data, width, height) {
+// 17% comprimation 
+// 22% when final black ignored
+// 24% when initial and trailing black frames ignored
+  let bytes = 0;
 
-  let byteCnt = 0;
-
+  // scan for black
+  const nonBlackFrames = [];
   for (let w = 0; w < width; w++) {
+    for (let h = 0; h < height; h++) {
+      const idx = (width * h + w) << 2;
+      this_rgb = rgb(data, idx);
+      if (!rgb_isblack(this_rgb)) {
+        nonBlackFrames.push(w);
+        break;
+      }
+    }
+  }
+  const firstFrame = nonBlackFrames.length ? nonBlackFrames.shift() : 0;
+  const lastFrame = nonBlackFrames.length ? nonBlackFrames.pop() : width-1;
+  const numFrames = lastFrame-firstFrame+1;
+  // console.log({firstFrame, lastFrame, numFrames});
+
+  for (let w = firstFrame; w < lastFrame+1; w++) {
 
     prev_rgb = rgb(data, 0);
-    byteCnt += 4;
     let sameCnt = 1;
 
     for (let h = 1; h < height; h++) {
@@ -29,14 +59,38 @@ function runLengthEncode(data, width, height) {
       if (rgb_eq(this_rgb, prev_rgb)) {
         sameCnt++;
       } else {
-        byteCnt += 4;
+        bytes += 4;
         prev_rgb = this_rgb;
         sameCnt = 1;
       }
     }
-    byteCnt += 4;
+    bytes += 4; // at least the last one will be printed
   }
-  return byteCnt;
+  return {bytes, frames: numFrames};
+}
+
+function diffEncode(data, width, height) {
+// 37% comprimation
+
+  let bytes = 0;
+  let prev_frame = [];
+
+  for (let w = 0; w < width; w++) {
+    for (let h = 0; h < height; h++) {
+
+      const idx = (width * h + w) << 2;
+      this_rgb = rgb(data, idx);
+
+      if (w>0 && rgb_eq(prev_frame[h], this_rgb)) {
+        bytes +=1;
+      } else {
+        bytes +=3;
+      }
+
+      prev_frame[h] = this_rgb;
+    }
+  }
+  return {bytes, frames: width};
 }
 
 async function _readImage(imageFile) {
@@ -58,11 +112,13 @@ async function _readImage(imageFile) {
     pipe.on('parsed', function () {
       console.log(`${imageFile}: ${this.width} x ${this.height} px`);
       
-      const frames = this.width;
-      const origBytes = this.width * this.height * 3;
-      const encodedBytes = runLengthEncode(this.data, this.width, this.height);
-      
-      console.log(`Bytes: ${origBytes}, ${Math.round(encodedBytes / origBytes * 100)}%`);
+      const metrics = runLengthEncode(this.data, this.width, this.height);
+      const origFrames = this.width;
+      const frames = metrics.frames;
+      const origBytes = frames * this.height * 3;
+      const encodedBytes = metrics.bytes;
+
+      console.log(`Frames: ${frames}/${origFrames} Bytes: ${origBytes}, ${Math.round(encodedBytes / origBytes * 100)}%`);
 
       return resolve({frames, origBytes, encodedBytes});
     });
