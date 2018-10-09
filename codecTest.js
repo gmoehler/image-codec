@@ -3,53 +3,41 @@ const png = require('pngjs').PNG;
 const {promisify} = require('util');
 const readDirAsync = promisify(fs.readdir);
 
+function rgb(data, idx) {
+  return {r: data[idx], g: data[idx+1], b: data[idx+2]};
+}
+
+function rgb_eq(rgb1, rgb2) {
+  return JSON.stringify(rgb1) === JSON.stringify(rgb2);
+}
 
 function runLengthEncode(data, width, height) {
 
   let byteCnt = 0;
-  let prevFrame = [];
 
   for (let w = 0; w < width; w++) {
-    // console.log(`frame: ${w}`);
 
-    let prev_r = data[0];
-    let prev_g = data[1];
-    let prev_b = data[2];
-
+    prev_rgb = rgb(data, 0);
     byteCnt += 4;
     let sameCnt = 1;
 
     for (let h = 1; h < height; h++) {
+
       const idx = (width * h + w) << 2;
+      this_rgb = rgb(data, idx);
 
-      // console.log(` ${h}: ${data[idx]} ${data[idx+1]}
-      // ${data[idx+2]}`);
-
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-
-      const pidx = 3 * h;
-
-      if (r === prev_r && g === prev_g && b === prev_b) {
+      if (rgb_eq(this_rgb, prev_rgb)) {
         sameCnt++;
       } else {
         byteCnt += 4;
-        //console.log(`${sameCnt}x: ${prev_r} ${prev_g} ${prev_b}`);
-        prev_r = r;
-        prev_g = g;
-        prev_b = b;
+        prev_rgb = this_rgb;
         sameCnt = 1;
       }
-
     }
     byteCnt += 4;
-
-    //console.log(`${sameCnt}x: ${prev_r} ${prev_g} ${prev_b}`);
   }
   return byteCnt;
 }
-
 
 async function _readImage(imageFile) {
 
