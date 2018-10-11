@@ -15,7 +15,7 @@ readDirAsync(folder).then(files => {
     .filter(filename => filename.split('.').pop() === "png");
 }).then(filesWithPath => {
   // console.log(filesWithPath);
-  return Promise.all(filesWithPath.map(f => encoder.readImage(f, method )))
+  return Promise.all(filesWithPath.map(f => encoder.readImageAndEncode(f, method )))
 }).then(c => {
   const sumFrame = c.reduce((sum, obj) => sum + obj.frames, 0);
   const sumOrigBytes = c.reduce((sum, obj) => sum + obj.origBytes, 0);
