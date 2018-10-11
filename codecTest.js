@@ -71,7 +71,7 @@ function analyseImage(data, width, height) {
 }
 
 function runLengthEncode(data, width, height, firstFrame, lastFrame,) {
-  // 17% comprimation 22% when final black ignored 24% when initial and trailing
+  // 23% comprimation when initial and trailing
   // black frames ignored
   let bytes = 0;
 
@@ -88,24 +88,24 @@ function runLengthEncode(data, width, height, firstFrame, lastFrame,) {
       const idx = (width * h + w) << 2;
       this_rgb = rgb(data, idx);
 
-      console.log(`${w},${h}`);
-      rgb_print(prev_rgb, ` prev`);
-      rgb_print(this_rgb, ` this`);
+      // console.log(`${w},${h}`);
+      // rgb_print(prev_rgb, ` prev`);
+      // rgb_print(this_rgb, ` this`);
       if (rgb_eq(this_rgb, prev_rgb)) {
         sameCnt++;
       } else {
-        rgb_print(prev_rgb, `${w},${h}: ${sameCnt}x`);
+        // rgb_print(prev_rgb, `${w},${h}: ${sameCnt}x`);
         bytes += 4;
-        console.log(`-> ${bytes} bytes`);
+        // console.log(`-> ${bytes} bytes`);
         prev_rgb = this_rgb;
         sameCnt = 1;
       }
     }
 
     // at least the last one will be printed
-    rgb_print(prev_rgb, `${w},${height - 1}: ${sameCnt}x`);
+    // rgb_print(prev_rgb, `${w},${height - 1}: ${sameCnt}x`);
     bytes += 4;
-    console.log(`-> ${bytes} bytes`);
+    // console.log(`-> ${bytes} bytes`);
   }
   return {bytes, frames: numFrames};
 }
@@ -124,10 +124,13 @@ function diffEncode(data, width, height, firstFrame, lastFrame) {
 
       const idx = (width * h + w) << 2;
       this_rgb = rgb(data, idx);
+      // rgb_print(this_rgb, `${w},${h}: this`);
       const diff = w > 0
         ? rgb_diff(prev_frame[h], this_rgb)
         : this_rgb;
       bytes += diff.bytes;
+      // rgb_print(diff, `${w},${h}: diff`);
+      // console.log(`-> ${bytes}`)
 
       prev_frame[h] = this_rgb;
     }
@@ -198,7 +201,8 @@ async function _readImage(imageFile) {
 
       const params = analyseImage(this.data, this.width, this.height);
 
-      const metrics = runLengthEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+      // const metrics = runLengthEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+      const metrics = diffEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
       // const metrics = combinedEncode(this.data, this.width, this.height,
       // params.firstFrame, params.lastFrame);
 
@@ -207,14 +211,14 @@ async function _readImage(imageFile) {
       const origBytes = frames * this.height * 3;
       const encodedBytes = metrics.bytes;
 
-      console.log(`Frames: ${frames}/${origFrames} Bytes: ${origBytes}, ${Math.round(encodedBytes / origBytes * 100)}%`);
+      console.log(`Frames: ${frames}/${origFrames}, Bytes: ${encodedBytes}/${origBytes}, ${Math.round(encodedBytes / origBytes * 100)}%`);
 
       return resolve({frames, origBytes, encodedBytes});
     });
   })
 };
 
-const folder = "test"; // "images";
+const folder = "test";
 
 readDirAsync(folder).then(files => {
   return filesWithPath = files.map(f => folder + '/' + f);
