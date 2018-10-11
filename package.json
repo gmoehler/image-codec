@@ -1,7 +1,7 @@
 {
-  "name": "cli",
+  "name": "image-codec",
   "version": "1.0.0",
-  "description": "poi cli",
+  "description": "image incoding experiements",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -10,8 +10,6 @@
   "author": "gm",
   "license": "MIT",
   "dependencies": {
-    "csv-parse": "2.4.0",
-    "eslint": "4.19.1",
     "pngjs": "3.3.3"
   },
   "devDependencies": {
