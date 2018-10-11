@@ -4,7 +4,12 @@ const {promisify} = require('util');
 const readDirAsync = promisify(fs.readdir);
 
 function rgb(data, idx) {
-  return {r: data[idx], g: data[idx+1], b: data[idx+2], bytes: 3};
+  return {
+    r: data[idx],
+    g: data[idx + 1],
+    b: data[idx + 2],
+    bytes: 3
+  };
 }
 
 function rgb_eq(rgb1, rgb2) {
@@ -12,7 +17,7 @@ function rgb_eq(rgb1, rgb2) {
 }
 
 function black() {
-  return {r: 0, g: 0, b:0, bytes: 3};
+  return {r: 0, g: 0, b: 0, bytes: 3};
 }
 
 function rgb_isblack(rgb) {
@@ -20,11 +25,11 @@ function rgb_isblack(rgb) {
 }
 
 function same() {
-  return {r: -1, g: -1, b: -1, bytes:1};
+  return {r: -1, g: -1, b: -1, bytes: 1};
 }
 
 function rgb_issame() {
-	return rgb_eq(rgb, same());
+  return rgb_eq(rgb, same());
 }
 
 function rgb_print(px, prefix) {
@@ -32,10 +37,10 @@ function rgb_print(px, prefix) {
 }
 
 function rgb_diff(rgb_ref, rgb_cur) {
-	if (rgb_eq(rgb_ref, rgb_cur)) {
-        return same();
-    } 
-	return rgb_cur;
+  if (rgb_eq(rgb_ref, rgb_cur)) {
+    return same();
+  }
+  return rgb_cur;
 }
 
 function analyseImage(data, width, height) {
@@ -54,23 +59,26 @@ function analyseImage(data, width, height) {
       }
     }
   }
-  const firstFrame = nonBlackFrames.length ? nonBlackFrames.shift() : 0;
-  const lastFrame = nonBlackFrames.length ? nonBlackFrames.pop() : width-1;
-  // const numFrames = lastFrame-firstFrame+1;
-  // console.log({firstFrame, lastFrame, numFrames});
+  const firstFrame = nonBlackFrames.length
+    ? nonBlackFrames.shift()
+    : 0;
+  const lastFrame = nonBlackFrames.length
+    ? nonBlackFrames.pop()
+    : width - 1;
+  // const numFrames = lastFrame-firstFrame+1; console.log({firstFrame, lastFrame,
+  // numFrames});
   return {firstFrame, lastFrame};
 }
 
-function runLengthEncode(data, width, height, firstFrame, lastFrame, ) {
-  // 17% comprimation 
-  // 22% when final black ignored
-  // 24% when initial and trailing black frames ignored
+function runLengthEncode(data, width, height, firstFrame, lastFrame,) {
+  // 17% comprimation 22% when final black ignored 24% when initial and trailing
+  // black frames ignored
   let bytes = 0;
 
-  const numFrames = lastFrame-firstFrame+1;
+  const numFrames = lastFrame - firstFrame + 1;
   // console.log({firstFrame, lastFrame, numFrames});
 
-  for (let w = firstFrame; w < lastFrame+1; w++) {
+  for (let w = firstFrame; w < lastFrame + 1; w++) {
     const idx0 = (w) << 2;
     prev_rgb = rgb(data, idx0);
     let sameCnt = 1;
@@ -79,10 +87,10 @@ function runLengthEncode(data, width, height, firstFrame, lastFrame, ) {
 
       const idx = (width * h + w) << 2;
       this_rgb = rgb(data, idx);
-      
-        console.log( `${w},${h}`);
-		rgb_print(prev_rgb, ` prev`);
-		rgb_print(this_rgb, ` this`);
+
+      console.log(`${w},${h}`);
+      rgb_print(prev_rgb, ` prev`);
+      rgb_print(this_rgb, ` this`);
       if (rgb_eq(this_rgb, prev_rgb)) {
         sameCnt++;
       } else {
@@ -93,9 +101,9 @@ function runLengthEncode(data, width, height, firstFrame, lastFrame, ) {
         sameCnt = 1;
       }
     }
-    
+
     // at least the last one will be printed
-    rgb_print(prev_rgb, `${w},${height-1}: ${sameCnt}x`);
+    rgb_print(prev_rgb, `${w},${height - 1}: ${sameCnt}x`);
     bytes += 4;
     console.log(`-> ${bytes} bytes`);
   }
@@ -103,21 +111,22 @@ function runLengthEncode(data, width, height, firstFrame, lastFrame, ) {
 }
 
 function diffEncode(data, width, height, firstFrame, lastFrame) {
-// 37% comprimation
-// 39% if initial and final black frames ignored
+  // 37% comprimation 39% if initial and final black frames ignored
 
   let bytes = 0;
   let prev_frame = [];
 
-  const numFrames = lastFrame-firstFrame+1;
+  const numFrames = lastFrame - firstFrame + 1;
   // console.log({firstFrame, lastFrame, numFrames});
 
-  for (let w = firstFrame; w < lastFrame+1; w++) {
+  for (let w = firstFrame; w < lastFrame + 1; w++) {
     for (let h = 0; h < height; h++) {
 
       const idx = (width * h + w) << 2;
       this_rgb = rgb(data, idx);
-      const diff = w>0 ? rgb_diff(prev_frame[h], this_rgb) : this_rgb;
+      const diff = w > 0
+        ? rgb_diff(prev_frame[h], this_rgb)
+        : this_rgb;
       bytes += diff.bytes;
 
       prev_frame[h] = this_rgb;
@@ -127,39 +136,40 @@ function diffEncode(data, width, height, firstFrame, lastFrame) {
 }
 
 function combinedEncode(data, width, height, firstFrame, lastFrame) {
-// % comprimation
-// % if initial and final black frames ignored
+  // % comprimation % if initial and final black frames ignored
 
   let bytes = 0;
   let prev_frame = [];
 
-  const numFrames = lastFrame-firstFrame+1;
+  const numFrames = lastFrame - firstFrame + 1;
   // console.log({firstFrame, lastFrame, numFrames});
 
-  for (let w = firstFrame; w < lastFrame+1; w++) {
-     let prev_diff = null;
-     let sameCnt = 0;
-     for (let h = 0; h < height; h++) {
+  for (let w = firstFrame; w < lastFrame + 1; w++) {
+    let prev_diff = null;
+    let sameCnt = 0;
+    for (let h = 0; h < height; h++) {
 
       const idx = (width * h + w) << 2;
       this_rgb = rgb(data, idx);
-      
+
       //diff encode
-      const diff = w>0 ? rgb_diff(prev_frame[h], this_rgb) : this_rgb;
-      
+      const diff = w > 0
+        ? rgb_diff(prev_frame[h], this_rgb)
+        : this_rgb;
+
       // runlength encode
       if (rgb_eq(prev_diff, diff)) {
-      	sameCnt++;
+        sameCnt++;
       } else {
-      	// output diff with count
-      	if (rgb_issame(diff)) {
-      		bytes++; // one byte for same
-      	} else {
-      		bytes += diff.bytes +1;
-      	}
+        // output diff with count
+        if (rgb_issame(diff)) {
+          bytes++; // one byte for same
+        } else {
+          bytes += diff.bytes + 1;
+        }
       }
-	   
-	   prev_diff = this_rgb;
+
+      prev_diff = this_rgb;
 
       prev_frame[h] = this_rgb;
     }
@@ -187,9 +197,10 @@ async function _readImage(imageFile) {
       console.log(`${imageFile}: ${this.width} x ${this.height} px`);
 
       const params = analyseImage(this.data, this.width, this.height);
-      
-     const metrics = runLengthEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
-      //const metrics = combinedEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+
+      const metrics = runLengthEncode(this.data, this.width, this.height, params.firstFrame, params.lastFrame);
+      // const metrics = combinedEncode(this.data, this.width, this.height,
+      // params.firstFrame, params.lastFrame);
 
       const origFrames = this.width;
       const frames = metrics.frames;
@@ -203,7 +214,7 @@ async function _readImage(imageFile) {
   })
 };
 
-const folder = "test";// "images";
+const folder = "test"; // "images";
 
 readDirAsync(folder).then(files => {
   return filesWithPath = files.map(f => folder + '/' + f);
